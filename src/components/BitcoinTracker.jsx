@@ -31,6 +31,8 @@ const BitcoinTracker = () => {
   const [priceChange, setPriceChange] = useState('');
   const [error, setError] = useState('');
 
+  const [seriesData, setSeriesData] = useState(new Map());
+
   const getData = async () => {
     const response = await axios.get(CURRENT_PRICE_URL, {
       params: {
@@ -40,7 +42,6 @@ const BitcoinTracker = () => {
       },
     });
     const data = response.data.bitcoin;
-    console.log(`Current Bitcoin Price: $${data.usd}`);
     const percentChange = data.usd_24h_change;
     const curee = data.usd;
     setCurrentPrice(data.usd);
@@ -56,8 +57,6 @@ const BitcoinTracker = () => {
     getData();
   }, []);
 
-  const [seriesData, setSeriesData] = useState(new Map());
-
   const getGraphData = async (interval) => {
     const days = daysConversion[interval];
     try {
@@ -72,10 +71,13 @@ const BitcoinTracker = () => {
         newMap.set(interval, formattedData);
         return newMap;
       });
+      setError('');
       return formattedData;
     } catch (error) {
       console.log(error);
-      setError('Too many requests. Please try again after 15-seconds');
+      setError(
+        `Too many requests. Please try again after ~1 minute for ${interval} data`
+      );
     }
   };
 
@@ -98,7 +100,6 @@ const BitcoinTracker = () => {
         newLineSeries.setData(seriesData.get('1d'));
       } else {
         const data = await getGraphData('1d');
-        console.log({ data });
         newLineSeries.setData(data);
       }
 
@@ -113,11 +114,7 @@ const BitcoinTracker = () => {
 
   const setChartInterval = async (interval) => {
     if (!lineSeries) return;
-
     setActiveInterval(interval);
-
-    console.log({ seriesData });
-
     if (seriesData.has(interval)) {
       lineSeries.setData(seriesData.get(interval));
     } else {
@@ -127,10 +124,6 @@ const BitcoinTracker = () => {
     lineSeries.applyOptions({ color: intervalColor });
     chart.timeScale().fitContent();
   };
-
-  if (error) {
-    return <p style={{ fontStyle: 'CircularStd' }}>{error}</p>;
-  }
 
   return (
     <div>
@@ -182,6 +175,7 @@ const BitcoinTracker = () => {
           </button>
         ))}
       </div>
+      {error && <span className='error-message'>{error}</span>}
       <div ref={chartContainerRef} style={{ marginTop: '60px' }} />
     </div>
   );
