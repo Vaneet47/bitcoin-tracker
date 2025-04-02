@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, LineSeries } from 'lightweight-charts';
+import { createChart, HistogramSeries, LineSeries } from 'lightweight-charts';
 import Circle from '../assets/plus-circle.svg?react';
 import Maximize from '../assets/maximize-2.svg?react';
 import './BitcoinTracker.css';
@@ -26,6 +26,7 @@ const BitcoinTracker = () => {
   const chartContainerRef = useRef(null);
   const [chart, setChart] = useState(null);
   const [lineSeries, setLineSeries] = useState(null);
+  const [volumeSeries, setVolumeSeries] = useState(null);
   const [activeInterval, setActiveInterval] = useState('1d');
   const [currentPrice, setCurrentPrice] = useState('');
   const [priceChange, setPriceChange] = useState('');
@@ -62,10 +63,13 @@ const BitcoinTracker = () => {
     try {
       const response = await axios.get(`${INTERVAL_DATA_URL}&days=${days}
       `);
-      const formattedData = response.data.prices.map(([timestamp, price]) => ({
-        time: Math.floor(timestamp / 1000),
-        value: price,
-      }));
+      const formattedData = response.data.prices.map(
+        ([timestamp, price], index) => ({
+          time: Math.floor(timestamp / 1000),
+          value: price,
+          volume: response.data.total_volumes[index][1],
+        })
+      );
       setSeriesData((prevMap) => {
         const newMap = new Map(prevMap);
         newMap.set(interval, formattedData);
@@ -89,22 +93,53 @@ const BitcoinTracker = () => {
         textColor: 'transparent',
         background: { type: 'solid', color: 'white' },
       },
+      rightPriceScale: {
+        borderColor: 'lightgrey',
+      },
+      timeScale: {
+        borderColor: 'lightgrey',
+      },
+      leftPriceScale: {
+        visible: true,
+        borderColor: 'lightgrey',
+      },
       height: 343,
       width: 839,
     });
     const newLineSeries = newChart.addSeries(LineSeries, {
+      title: 'Price',
+      priceLineVisible: true,
+      priceLineWidth: 1.5,
       color: intervalColor,
+    });
+    const newVolumeSeries = newChart.addSeries(HistogramSeries, {
+      title: 'Volume',
+      color: 'rgb(220,220,220,0.9)',
+      priceLineVisible: true,
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'left',
     });
     const setupChart = async () => {
       if (seriesData.has('1d')) {
-        newLineSeries.setData(seriesData.get('1d'));
+        newLineSeries.setData(
+          seriesData.get('1d').map(({ time, value }) => ({ time, value }))
+        );
+        newVolumeSeries.setData(
+          seriesData
+            .get('1d')
+            .map(({ time, volume }) => ({ time, value: volume }))
+        );
       } else {
         const data = await getGraphData('1d');
-        newLineSeries.setData(data);
+        newLineSeries.setData(data.map(({ time, value }) => ({ time, value })));
+        newVolumeSeries.setData(
+          data.map(({ time, volume }) => ({ time, value: volume }))
+        );
       }
 
       setChart(newChart);
       setLineSeries(newLineSeries);
+      setVolumeSeries(newVolumeSeries);
     };
 
     setupChart();
@@ -113,14 +148,26 @@ const BitcoinTracker = () => {
   }, []);
 
   const setChartInterval = async (interval) => {
-    if (!lineSeries) return;
+    if (!lineSeries || !volumeSeries) return;
     setActiveInterval(interval);
+
     if (seriesData.has(interval)) {
-      lineSeries.setData(seriesData.get(interval));
+      lineSeries.setData(
+        seriesData.get(interval).map(({ time, value }) => ({ time, value }))
+      );
+      volumeSeries.setData(
+        seriesData
+          .get(interval)
+          .map(({ time, volume }) => ({ time, value: volume }))
+      );
     } else {
       const data = await getGraphData(interval);
-      lineSeries.setData(data);
+      lineSeries.setData(data.map(({ time, value }) => ({ time, value })));
+      volumeSeries.setData(
+        data.map(({ time, volume }) => ({ time, value: volume }))
+      );
     }
+
     lineSeries.applyOptions({ color: intervalColor });
     chart.timeScale().fitContent();
   };
