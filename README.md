@@ -1,3 +1,3 @@
 # Bitcoin Price Tracker
 
-![image](https://github.com/user-attachments/assets/1f6d4eb5-8ba9-4821-8cc4-9ca9ad2dc7d6)
+![image](https://github.com/user-attachments/assets/a458051d-1809-4750-8417-c289aa331db2)
