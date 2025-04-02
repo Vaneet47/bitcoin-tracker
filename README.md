@@ -4,8 +4,8 @@
 
 ## Implementation Details:
 ### API Used:  
-- Market chart data: CoinGecko API  
-- Current price & 24-hour change: CoinGecko API  
+- Market chart data: [CoinGecko API](https://docs.coingecko.com/reference/coins-id-market-chart)
+- Current price & 24-hour change: [CoinGecko API](https://docs.coingecko.com/reference/simple-price)  
 
 ### Key Features:
 - Used lightweight-charts for graph visualization  
