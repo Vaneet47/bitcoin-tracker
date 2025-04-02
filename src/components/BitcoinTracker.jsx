@@ -8,6 +8,8 @@ import axios from 'axios';
 const menu = ['Summary', 'Chart', 'Statistics', 'Analysis', 'Settings'];
 
 const intervalColor = '#4B40EE';
+const INITIAL_WIDTH = 1000;
+const INITIAL_HEIGHT = 343;
 
 const CURRENT_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const INTERVAL_DATA_URL =
@@ -92,10 +94,33 @@ const BitcoinTracker = () => {
         setError(`Too many requests. Please reload after ~1 minute`);
       } else
         setError(
-          `Too many requests. Please try again after ~1 minute for ${interval} data`
+          `Too many requests! Please wait a minute and try again to load the ${interval} data.`
         );
     }
   };
+
+  useEffect(() => {
+    if (!chart) return;
+
+    const resizeChart = () => {
+      if (chartContainerRef.current && chart) {
+        const newWidth = document.fullscreenElement
+          ? window.innerWidth
+          : INITIAL_WIDTH;
+        const newHeight = document.fullscreenElement
+          ? window.innerHeight
+          : INITIAL_HEIGHT;
+        chart.applyOptions({ width: newWidth, height: newHeight });
+      }
+    };
+    const handleFullscreenChange = () => {
+      resizeChart();
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [chart]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -115,8 +140,8 @@ const BitcoinTracker = () => {
         visible: true,
         borderColor: 'lightgrey',
       },
-      height: 343,
-      width: 1000,
+      height: INITIAL_HEIGHT,
+      width: INITIAL_WIDTH,
     });
     const newAreaSeries = newChart.addSeries(AreaSeries, {
       title: 'Price',
@@ -158,6 +183,7 @@ const BitcoinTracker = () => {
     setupChart();
 
     return () => newChart.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setChartInterval = async (interval) => {
@@ -183,6 +209,15 @@ const BitcoinTracker = () => {
 
     areaSeries.applyOptions({ color: intervalColor });
     chart.timeScale().fitContent();
+  };
+
+  const toggleFullscreen = () => {
+    chartContainerRef.current
+      .requestFullscreen()
+      .then(() => {})
+      .catch((err) => {
+        console.error('Error attempting to enable fullscreen', err);
+      });
   };
 
   return (
@@ -221,7 +256,11 @@ const BitcoinTracker = () => {
         className='buttons-container'
         style={{ display: 'flex', gap: '8px', marginTop: '40px' }}
       >
-        <button key='Fullscreen' className='button-fullscreen'>
+        <button
+          key='Fullscreen'
+          className='button-fullscreen'
+          onClick={toggleFullscreen}
+        >
           <Maximize width={24} height={24} />
           Fullscreen
         </button>
