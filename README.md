@@ -1,3 +1,3 @@
 # Bitcoin Price Tracker
-<img width="1032" alt="Screenshot 2025-04-03 at 4 42 13 AM" src="https://github.com/user-attachments/assets/e26f0122-3efd-4b30-92a6-49e3d832bbc7" />
 
+![image](https://github.com/user-attachments/assets/1f6d4eb5-8ba9-4821-8cc4-9ca9ad2dc7d6)
