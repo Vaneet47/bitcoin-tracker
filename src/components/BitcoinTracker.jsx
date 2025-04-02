@@ -35,25 +35,32 @@ const BitcoinTracker = () => {
   const [seriesData, setSeriesData] = useState(new Map());
 
   const getData = async () => {
-    const response = await axios.get(CURRENT_PRICE_URL, {
-      params: {
-        ids: 'bitcoin',
-        vs_currencies: 'usd',
-        include_24hr_change: 'true',
-      },
-    });
-    const data = response.data.bitcoin;
-    const percentChange = data.usd_24h_change;
-    const curee = data.usd;
-    setCurrentPrice(data.usd);
-    let previousPrice = curee / (1 + percentChange / 100);
-    let absoluteChange = curee - previousPrice;
-    const priceCh = `${
-      percentChange > 0
-        ? `+${absoluteChange.toFixed(2)}`
-        : absoluteChange.toFixed(2)
-    } (${percentChange.toFixed(2)}%)`;
-    setPriceChange(priceCh);
+    try {
+      const response = await axios.get(CURRENT_PRICE_URL, {
+        params: {
+          ids: 'bitcoin',
+          vs_currencies: 'usd',
+          include_24hr_change: 'true',
+        },
+      });
+      const data = response.data.bitcoin;
+      const percentChange = data.usd_24h_change;
+      const curee = data.usd;
+      setCurrentPrice(data.usd);
+      let previousPrice = curee / (1 + percentChange / 100);
+      let absoluteChange = curee - previousPrice;
+      const priceCh = `${
+        percentChange > 0
+          ? `+${absoluteChange.toFixed(2)}`
+          : absoluteChange.toFixed(2)
+      } (${percentChange.toFixed(2)}%)`;
+      setPriceChange(priceCh);
+    } catch (error) {
+      console.log(error);
+      setError(
+        `Too many requests to get current price. Please reload after ~1 minute`
+      );
+    }
   };
 
   useEffect(() => {
@@ -109,9 +116,10 @@ const BitcoinTracker = () => {
         borderColor: 'lightgrey',
       },
       height: 343,
-      width: 839,
+      width: 1000,
     });
     const newAreaSeries = newChart.addSeries(AreaSeries, {
+      title: 'Price',
       topColor: 'rgba(127, 119, 235, 0.5)',
       bottomColor: 'rgba(246, 246, 246, 0)',
       lineColor: '#4B40EE',
