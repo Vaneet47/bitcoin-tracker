@@ -46,16 +46,19 @@ const BitcoinTracker = () => {
         },
       });
       const data = response.data.bitcoin;
-      const percentChange = data.usd_24h_change;
+      const percentChange = data.usd_24h_change.toFixed(2);
       const curee = data.usd;
-      setCurrentPrice(data.usd);
+      const formattedPrice = data.usd.toLocaleString('en-US');
+
+      setCurrentPrice(formattedPrice);
       let previousPrice = curee / (1 + percentChange / 100);
-      let absoluteChange = curee - previousPrice;
+      let absoluteChange = Number(
+        (curee - previousPrice).toFixed(2)
+      ).toLocaleString('en-US');
       const priceCh = `${
-        percentChange > 0
-          ? `+${absoluteChange.toFixed(2)}`
-          : absoluteChange.toFixed(2)
-      } (${percentChange.toFixed(2)}%)`;
+        percentChange > 0 ? `+${absoluteChange}` : absoluteChange
+      } (${percentChange}%)`;
+
       setPriceChange(priceCh);
     } catch (error) {
       console.log(error);
