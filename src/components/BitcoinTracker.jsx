@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, HistogramSeries, LineSeries } from 'lightweight-charts';
+import { AreaSeries, createChart, HistogramSeries } from 'lightweight-charts';
 import Circle from '../assets/plus-circle.svg?react';
 import Maximize from '../assets/maximize-2.svg?react';
 import './BitcoinTracker.css';
@@ -25,7 +25,7 @@ const daysConversion = {
 const BitcoinTracker = () => {
   const chartContainerRef = useRef(null);
   const [chart, setChart] = useState(null);
-  const [lineSeries, setLineSeries] = useState(null);
+  const [areaSeries, setAreaSeries] = useState(null);
   const [volumeSeries, setVolumeSeries] = useState(null);
   const [activeInterval, setActiveInterval] = useState('1d');
   const [currentPrice, setCurrentPrice] = useState('');
@@ -48,9 +48,11 @@ const BitcoinTracker = () => {
     setCurrentPrice(data.usd);
     let previousPrice = curee / (1 + percentChange / 100);
     let absoluteChange = curee - previousPrice;
-    const priceCh = `${percentChange > 0 ? '+' : '-'}${absoluteChange.toFixed(
-      2
-    )} (${percentChange.toFixed(2)}%)`;
+    const priceCh = `${
+      percentChange > 0
+        ? `+${absoluteChange.toFixed(2)}`
+        : absoluteChange.toFixed(2)
+    } (${percentChange.toFixed(2)}%)`;
     setPriceChange(priceCh);
   };
 
@@ -79,9 +81,12 @@ const BitcoinTracker = () => {
       return formattedData;
     } catch (error) {
       console.log(error);
-      setError(
-        `Too many requests. Please try again after ~1 minute for ${interval} data`
-      );
+      if (interval === '1d') {
+        setError(`Too many requests. Please reload after ~1 minute`);
+      } else
+        setError(
+          `Too many requests. Please try again after ~1 minute for ${interval} data`
+        );
     }
   };
 
@@ -106,22 +111,22 @@ const BitcoinTracker = () => {
       height: 343,
       width: 839,
     });
-    const newLineSeries = newChart.addSeries(LineSeries, {
-      title: 'Price',
-      priceLineVisible: true,
-      priceLineWidth: 1.5,
-      color: intervalColor,
+    const newAreaSeries = newChart.addSeries(AreaSeries, {
+      topColor: 'rgba(127, 119, 235, 0.5)',
+      bottomColor: 'rgba(246, 246, 246, 0)',
+      lineColor: '#4B40EE',
+      lineWidth: 2,
     });
     const newVolumeSeries = newChart.addSeries(HistogramSeries, {
       title: 'Volume',
-      color: 'rgb(220,220,220,0.9)',
+      color: 'rgb(211,211,211,0.8)',
       priceLineVisible: true,
       priceFormat: { type: 'volume' },
       priceScaleId: 'left',
     });
     const setupChart = async () => {
       if (seriesData.has('1d')) {
-        newLineSeries.setData(
+        newAreaSeries.setData(
           seriesData.get('1d').map(({ time, value }) => ({ time, value }))
         );
         newVolumeSeries.setData(
@@ -131,14 +136,14 @@ const BitcoinTracker = () => {
         );
       } else {
         const data = await getGraphData('1d');
-        newLineSeries.setData(data.map(({ time, value }) => ({ time, value })));
+        newAreaSeries.setData(data.map(({ time, value }) => ({ time, value })));
         newVolumeSeries.setData(
           data.map(({ time, volume }) => ({ time, value: volume }))
         );
       }
 
       setChart(newChart);
-      setLineSeries(newLineSeries);
+      setAreaSeries(newAreaSeries);
       setVolumeSeries(newVolumeSeries);
     };
 
@@ -148,11 +153,11 @@ const BitcoinTracker = () => {
   }, []);
 
   const setChartInterval = async (interval) => {
-    if (!lineSeries || !volumeSeries) return;
+    if (!areaSeries || !volumeSeries) return;
     setActiveInterval(interval);
 
     if (seriesData.has(interval)) {
-      lineSeries.setData(
+      areaSeries.setData(
         seriesData.get(interval).map(({ time, value }) => ({ time, value }))
       );
       volumeSeries.setData(
@@ -162,25 +167,34 @@ const BitcoinTracker = () => {
       );
     } else {
       const data = await getGraphData(interval);
-      lineSeries.setData(data.map(({ time, value }) => ({ time, value })));
+      areaSeries.setData(data.map(({ time, value }) => ({ time, value })));
       volumeSeries.setData(
         data.map(({ time, volume }) => ({ time, value: volume }))
       );
     }
 
-    lineSeries.applyOptions({ color: intervalColor });
+    areaSeries.applyOptions({ color: intervalColor });
     chart.timeScale().fitContent();
   };
 
   return (
     <div>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-          <span className='price-current'>{currentPrice}</span>
-          <span className='price-currency'>USD</span>
+      {currentPrice && (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}
+          >
+            <span className='price-current'>{currentPrice}</span>
+            <span className='price-currency'>USD</span>
+          </div>
+          <span
+            className='price-change'
+            style={{ color: priceChange[0] === '-' ? 'red' : '#67bf6b' }}
+          >
+            {priceChange}
+          </span>
         </div>
-        <span className='price-change'>{priceChange}</span>
-      </div>
+      )}
       <div className='menu-container'>
         {menu.map((item, index) => (
           <p
