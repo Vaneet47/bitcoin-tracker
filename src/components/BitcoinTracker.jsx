@@ -63,7 +63,7 @@ const BitcoinTracker = () => {
     } catch (error) {
       console.log(error);
       setError(
-        `Too many requests to get current price. Please reload after ~1 minute`
+        `Too many requests to get current price. Please wait for a few minutes and reload.`
       );
     }
   };
@@ -94,10 +94,10 @@ const BitcoinTracker = () => {
     } catch (error) {
       console.log(error);
       if (interval === '1d') {
-        setError(`Too many requests. Please reload after ~1 minute`);
+        setError(`Too many requests. Please wait for a few minutes and reload`);
       } else
         setError(
-          `Too many requests! Please wait a minute and try again to load the ${interval} data.`
+          `Too many requests! Please wait for a few minutes and try again to load the ${interval} data.`
         );
     }
   };
